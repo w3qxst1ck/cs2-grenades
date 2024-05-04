@@ -57,4 +57,5 @@ Temporary Items
 # iCloud generated files
 *.icloud
 
+# local env
 .env
