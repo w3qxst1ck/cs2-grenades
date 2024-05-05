@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/w3qxst1ck/cs2-grenades/internal/validator"
 )
 
 type Grenade struct {
 	ID          int64  `json:"id"`
+	Map         string `json:"map"`
 	Title       string `json:"title"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	Type        string `json:"type"`
 	Side        string `json:"side"`
 	Version     int32  `json:"version"`
@@ -20,10 +23,25 @@ type GrenadeModel struct {
 	DB *sql.DB
 }
 
+func ValidateGrenade(grenade *Grenade, v *validator.Validator) {
+	v.Check(grenade.Map != "", "map", "must be provided")
+	v.Check(len(grenade.Map) <= 100, "map", "must not be grater than 100 bytes")
 
-func(m GrenadeModel) Get(id int64) (*Grenade, error) {
+	v.Check(grenade.Title != "", "title", "must be provided")
+	v.Check(len(grenade.Title) <= 500, "title", "must not be grater than 500 bytes")
+
+	v.Check(len(grenade.Description) <= 700, "description", "must not be grater than 700 bytes")
+
+	v.Check(grenade.Type != "", "type", "must be provided")
+	v.Check(v.In(grenade.Type, []string{"smoke", "molotov", "he", "flash", "decoy"}), "type", "value of type must be smoke|molotov|he|flash|decoy")
+
+	v.Check(grenade.Side != "", "side", "must be provided")
+	v.Check(v.In(grenade.Side, []string{"CT", "T"}), "side", "value of side must be T or CT")
+}
+
+func (m GrenadeModel) Get(id int64) (*Grenade, error) {
 	query := `
-	SELECT id, title, description, type, side, version
+	SELECT id, map, title, description, type, side, version
 	FROM grenades 
 	WHERE id = $1`
 
@@ -34,6 +52,7 @@ func(m GrenadeModel) Get(id int64) (*Grenade, error) {
 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&grenade.ID,
+		&grenade.Map,
 		&grenade.Title,
 		&grenade.Description,
 		&grenade.Type,
@@ -49,5 +68,18 @@ func(m GrenadeModel) Get(id int64) (*Grenade, error) {
 		}
 	}
 	return &grenade, nil
-	
+}
+
+func (m GrenadeModel) Insert(grenade *Grenade) error {
+	query := `
+	INSERT INTO grenades (map, title, description, type, side)
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING id, version`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{grenade.Map, grenade.Title, grenade.Description, grenade.Type, grenade.Side}
+
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&grenade.ID, &grenade.Version)
 }
