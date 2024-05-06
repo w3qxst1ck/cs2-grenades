@@ -83,3 +83,104 @@ func (m GrenadeModel) Insert(grenade *Grenade) error {
 
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&grenade.ID, &grenade.Version)
 }
+
+func (m GrenadeModel) Update(grenade *Grenade) error {
+	query := `
+	UPDATE grenades 
+	SET map=$1, title=$2, description=$3, type=$4, side=$5, version=version + 1
+	WHERE id=$6 AND version=$7
+	RETURNING version`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []interface{}{
+		grenade.Map,
+		grenade.Title,
+		grenade.Description,
+		grenade.Type,
+		grenade.Side,
+		grenade.ID,
+		grenade.Version,
+	}
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&grenade.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m GrenadeModel) Delete(id int64) error {
+	query := `
+	DELETE FROM grenades
+	WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m GrenadeModel) GetAll() ([]*Grenade, error) {
+	query := `
+	SELECT id, map, title, description, type, side, version
+	FROM grenades
+	ORDER BY id`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	grenades := []*Grenade{}
+
+	for rows.Next() {
+		var grenade Grenade
+
+		err := rows.Scan(
+			&grenade.ID,
+			&grenade.Map,
+			&grenade.Title,
+			&grenade.Description,
+			&grenade.Type,
+			&grenade.Side,
+			&grenade.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		grenades = append(grenades, &grenade)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return grenades, nil
+}
