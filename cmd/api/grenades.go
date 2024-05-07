@@ -178,7 +178,28 @@ func (app *application) deleteGrenadeHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Request) {
-	grenades, err := app.models.Grenades.GetAll()
+	var input struct {
+		Map   string
+		Side  string
+		Type  string
+		data.Filters
+	}
+
+	qs := r.URL.Query()
+	input.Map = app.readString(qs, "map", "")
+	input.Side = app.readString(qs, "side", "")
+	input.Type = app.readString(qs, "type", "")
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+	input.Filters.SortSafeList = []string{"id", "map", "side", "type", "-id"}
+
+	v := validator.New()
+	v.Check(v.In(input.Filters.Sort, input.Filters.SortSafeList), "sort", "invalid sort value")
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Erorrs)
+		return 
+	}
+
+	grenades, err := app.models.Grenades.GetAll(input.Map, input.Side, input.Type, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

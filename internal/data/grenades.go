@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/w3qxst1ck/cs2-grenades/internal/validator"
@@ -142,16 +143,17 @@ func (m GrenadeModel) Delete(id int64) error {
 	return nil
 }
 
-func (m GrenadeModel) GetAll() ([]*Grenade, error) {
-	query := `
+func (m GrenadeModel) GetAll(csMap string, side string, grenType string, filters Filters) ([]*Grenade, error) {
+	query := fmt.Sprintf(`
 	SELECT id, map, title, description, type, side, version
 	FROM grenades
-	ORDER BY id`
+	WHERE (map = $1 OR $1 = '') AND (side = $2 OR $2 = '') AND (type = $3 OR $3 = '')
+	ORDER BY %s %s, id ASC`, filters.sortColumn() , filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query)
+	rows, err := m.DB.QueryContext(ctx, query, csMap, side, grenType)
 	if err != nil {
 		return nil, err
 	}
