@@ -20,6 +20,7 @@ type config struct {
 		msxIdleConns int
 		maxIdleTime  string
 	}
+	imagesDir string
 }
 
 type application struct {
@@ -47,6 +48,10 @@ func main() {
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgresSQL max open connections")
 	flag.IntVar(&cfg.db.msxIdleConns, "db-max-idle-conns", 25, "PostgresSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgresSQL max connection idle time")
+
+	// image
+	flag.StringVar(&cfg.imagesDir, "images-directory", "internal/images/", "Directory for saved images")
+
 
 	flag.Parse()
 

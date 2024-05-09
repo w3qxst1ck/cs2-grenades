@@ -13,10 +13,12 @@ var (
 
 type Models struct {
 	Grenades GrenadeModel
+	Images ImageModel
 }
 
 func NewModels(db *sql.DB) Models {
 	return Models{
 		Grenades: GrenadeModel{DB: db},
+		Images: ImageModel{DB: db},
 	}
 }
