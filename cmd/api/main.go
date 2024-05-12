@@ -21,6 +21,7 @@ type config struct {
 		maxIdleTime  string
 	}
 	imagesDir string
+	imagesUrl string
 }
 
 type application struct {
@@ -51,6 +52,7 @@ func main() {
 
 	// image
 	flag.StringVar(&cfg.imagesDir, "images-directory", "internal/images/", "Directory for saved images")
+	flag.StringVar(&cfg.imagesUrl, "images-url", "image/", "Images url")
 
 
 	flag.Parse()
