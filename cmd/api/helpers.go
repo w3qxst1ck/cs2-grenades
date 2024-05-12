@@ -110,4 +110,3 @@ func (app *application) readString(qs url.Values, key string, defaultValue strin
 	}
 	return q
 }
-

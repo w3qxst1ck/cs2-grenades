@@ -27,6 +27,10 @@ func (app *application) getGrenadeHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	for i := range grenade.Images {
+		grenade.Images[i].ImageURL = fmt.Sprintf("localhost:%d%s%s", app.config.port, app.config.imagesUrl, grenade.Images[i].Name)
+	}
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"grenade": grenade}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -205,9 +209,16 @@ func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	for i := range grenades {
+		for j := range grenades[i].Images {
+			grenades[i].Images[j].ImageURL = fmt.Sprintf("localhost:%d%s%s", app.config.port, app.config.imagesUrl, grenades[i].Images[j].Name)
+		}
+	}
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"grenades": grenades}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
+

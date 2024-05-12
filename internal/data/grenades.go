@@ -5,19 +5,21 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/w3qxst1ck/cs2-grenades/internal/validator"
 )
 
 type Grenade struct {
-	ID          int64  `json:"id"`
-	Map         string `json:"map"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Type        string `json:"type"`
-	Side        string `json:"side"`
-	Version     int32  `json:"version"`
+	ID          int64   `json:"id"`
+	Map         string  `json:"map"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	Type        string  `json:"type"`
+	Side        string  `json:"side"`
+	Version     int32   `json:"version"`
+	Images      []Image `json:"images,omitempty"`
 }
 
 type GrenadeModel struct {
@@ -42,11 +44,15 @@ func ValidateGrenade(grenade *Grenade, v *validator.Validator) {
 
 func (m GrenadeModel) Get(id int64) (*Grenade, error) {
 	query := `
-	SELECT id, map, title, description, type, side, version
-	FROM grenades 
-	WHERE id = $1`
+	SELECT g.id, g.map, g.title, g.description, g.type, g.side, g.version, string_agg(i.name, ',')
+	FROM grenades g
+	LEFT JOIN images i
+	ON g.id = i.grenade_id
+	WHERE g.id = $1
+	GROUP BY i.grenade_id, g.id`
 
 	var grenade Grenade
+	var imagesNames string
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
@@ -59,6 +65,7 @@ func (m GrenadeModel) Get(id int64) (*Grenade, error) {
 		&grenade.Type,
 		&grenade.Side,
 		&grenade.Version,
+		&imagesNames,
 	)
 	if err != nil {
 		switch {
@@ -68,6 +75,13 @@ func (m GrenadeModel) Get(id int64) (*Grenade, error) {
 			return nil, err
 		}
 	}
+
+	for _, name := range strings.Split(imagesNames, ",") {
+		grenade.Images = append(grenade.Images, Image{
+			Name: name,
+		})
+	}
+
 	return &grenade, nil
 }
 
@@ -145,10 +159,13 @@ func (m GrenadeModel) Delete(id int64) error {
 
 func (m GrenadeModel) GetAll(csMap string, side string, grenType string, filters Filters) ([]*Grenade, error) {
 	query := fmt.Sprintf(`
-	SELECT id, map, title, description, type, side, version
-	FROM grenades
+	SELECT g.id, g.map, g.title, g.description, g.type, g.side, g.version, string_agg(i.name, ',')
+	FROM grenades g
+	LEFT JOIN images i
+	ON g.id = i.grenade_id
 	WHERE (map = $1 OR $1 = '') AND (side = $2 OR $2 = '') AND (type = $3 OR $3 = '')
-	ORDER BY %s %s, id ASC`, filters.sortColumn() , filters.sortDirection())
+	GROUP BY i.grenade_id, g.id
+	ORDER BY %s %s, id ASC`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -163,6 +180,7 @@ func (m GrenadeModel) GetAll(csMap string, side string, grenType string, filters
 
 	for rows.Next() {
 		var grenade Grenade
+		var imagesNames string
 
 		err := rows.Scan(
 			&grenade.ID,
@@ -172,9 +190,16 @@ func (m GrenadeModel) GetAll(csMap string, side string, grenType string, filters
 			&grenade.Type,
 			&grenade.Side,
 			&grenade.Version,
+			&imagesNames,
 		)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, name := range strings.Split(imagesNames, ",") {
+			grenade.Images = append(grenade.Images, Image{
+				Name: name,
+			})
 		}
 
 		grenades = append(grenades, &grenade)
