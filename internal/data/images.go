@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -17,6 +18,32 @@ type ImageModel struct {
 	DB *sql.DB
 }
 
+func (m ImageModel) Get(id int64) (*Image, error) {
+	query := `
+	SELECT id, name FROM images
+	WHERE id = $1`
+
+	var image Image
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&image.ID,
+		&image.Name,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &image, nil
+}
+
 func (m ImageModel) Insert(image *Image) error {
 	query := `
 	INSERT INTO images (name, grenade_id)
@@ -29,9 +56,9 @@ func (m ImageModel) Insert(image *Image) error {
 	return m.DB.QueryRowContext(ctx, query, image.Name, image.GrenadeID).Scan(&image.ID)
 }
 
-func (m ImageModel) Get(grenadeId int64) ([]*Image, error) {
+func (m ImageModel) GetByGrenadeID(grenadeId int64) ([]*Image, error) {
 	query := `
-	SELECT name FROM images
+	SELECT id, name FROM images
 	WHERE grenade_id=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -48,10 +75,14 @@ func (m ImageModel) Get(grenadeId int64) ([]*Image, error) {
 	for rows.Next() {
 		var image Image
 
-		err := rows.Scan(&image.Name)
+		err := rows.Scan(
+			&image.ID,
+			&image.Name,
+		)
 		if err != nil {
 			return nil, err
 		}
+		image.GrenadeID = grenadeId
 
 		images = append(images, &image)
 	}
@@ -98,4 +129,29 @@ func (m ImageModel) GetAll() ([]*Image, error) {
 	}
 
 	return images, nil
+}
+
+func (m ImageModel) Delete(id int64) error {
+	query := `
+	DELETE FROM images
+	WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
 }

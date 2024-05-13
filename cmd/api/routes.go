@@ -19,6 +19,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/grenades/:id", app.deleteGrenadeHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/grenades/:id/images", app.uploadImageHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/images/:id", app.deleteImageHandler)
 	
 	return router
 }

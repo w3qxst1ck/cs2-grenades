@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"sync"
 
 	"github.com/w3qxst1ck/cs2-grenades/internal/data"
 	"github.com/w3qxst1ck/cs2-grenades/internal/validator"
@@ -16,6 +18,7 @@ func (app *application) getGrenadeHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// get grenade
 	grenade, err := app.models.Grenades.Get(id)
 	if err != nil {
 		switch {
@@ -27,9 +30,17 @@ func (app *application) getGrenadeHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	for i := range grenade.Images {
-		grenade.Images[i].ImageURL = fmt.Sprintf("localhost:%d%s%s", app.config.port, app.config.imagesUrl, grenade.Images[i].Name)
+	// get images for grenade
+	images, err := app.models.Images.GetByGrenadeID(grenade.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
 	}
+
+	// create Image.ImageURL for images
+	app.createImagesURL(images)
+
+	grenade.Images = images
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"grenade": grenade}, nil)
 	if err != nil {
@@ -164,6 +175,17 @@ func (app *application) deleteGrenadeHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	images, err := app.models.Images.GetByGrenadeID(id)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err = app.deleteGrenadeImages(images); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	err = app.models.Grenades.Delete(id)
 	if err != nil {
 		switch {
@@ -183,9 +205,9 @@ func (app *application) deleteGrenadeHandler(w http.ResponseWriter, r *http.Requ
 
 func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Map   string
-		Side  string
-		Type  string
+		Map  string
+		Side string
+		Type string
 		data.Filters
 	}
 
@@ -200,7 +222,7 @@ func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Req
 	v.Check(v.In(input.Filters.Sort, input.Filters.SortSafeList), "sort", "invalid sort value")
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Erorrs)
-		return 
+		return
 	}
 
 	grenades, err := app.models.Grenades.GetAll(input.Map, input.Side, input.Type, input.Filters)
@@ -209,11 +231,27 @@ func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	var wg sync.WaitGroup
+
 	for i := range grenades {
-		for j := range grenades[i].Images {
-			grenades[i].Images[j].ImageURL = fmt.Sprintf("localhost:%d%s%s", app.config.port, app.config.imagesUrl, grenades[i].Images[j].Name)
-		}
+		wg.Add(1)
+
+		go func(i int) {
+			defer wg.Done()
+
+			grenade := grenades[i]
+			images, err := app.models.Images.GetByGrenadeID(grenade.ID)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			app.createImagesURL(images)
+			grenade.Images = images
+		}(i)
 	}
+
+	wg.Wait()
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"grenades": grenades}, nil)
 	if err != nil {
@@ -222,3 +260,18 @@ func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
+func (app *application) createImagesURL(images []*data.Image) {
+	for i := range images {
+		images[i].ImageURL = fmt.Sprintf("localhost:%d%s%s", app.config.port, app.config.imagesUrl, images[i].Name)
+	}
+}
+
+func (app *application) deleteGrenadeImages(images []*data.Image) error {
+	for _, image := range images {
+		err := os.Remove(fmt.Sprintf("%s%s", app.config.imagesDir, image.Name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
