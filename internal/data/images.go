@@ -4,7 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"mime/multipart"
+	"strings"
 	"time"
+
+	"github.com/w3qxst1ck/cs2-grenades/internal/validator"
 )
 
 type Image struct {
@@ -16,6 +20,11 @@ type Image struct {
 
 type ImageModel struct {
 	DB *sql.DB
+}
+
+func VlidateImage(fileHeader *multipart.FileHeader, v *validator.Validator) {
+	v.Check(fileHeader.Size < 20_000_000, "grenadeImage_size", "file size must be less than 20MB")
+	v.Check(v.In(strings.Split(fileHeader.Filename, ".")[1], []string{"jpg", "jpeg", "png"}), "grenadeImage_extension", "file extension must be jpeg|jpg|png")
 }
 
 func (m ImageModel) Get(id int64) (*Image, error) {

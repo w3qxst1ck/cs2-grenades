@@ -8,6 +8,10 @@ import (
 
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
+
+	router.NotFound = http.HandlerFunc(app.notFoundResponse)
+	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
+	
 	router.ServeFiles("/v1/image/*filepath", http.Dir("internal/images"))
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)

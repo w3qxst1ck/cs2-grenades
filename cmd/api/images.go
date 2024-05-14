@@ -10,17 +10,25 @@ import (
 	"time"
 
 	"github.com/w3qxst1ck/cs2-grenades/internal/data"
+	"github.com/w3qxst1ck/cs2-grenades/internal/validator"
 )
 
 func (app *application) uploadImageHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20)
 
-	file, _, err := r.FormFile("grenadeImage")
+	file, fileHeader, err := r.FormFile("grenadeImage")
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 	defer file.Close()
+
+	v := validator.New()
+
+	if data.VlidateImage(fileHeader, v); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Erorrs)
+		return
+	}
 
 	fileName, err := app.saveImage(file)
 	if err != nil {
@@ -88,7 +96,7 @@ func (app *application) deleteImageHandler(w http.ResponseWriter, r *http.Reques
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-	
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "image successfully deleted"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

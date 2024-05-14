@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -44,4 +45,9 @@ func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.
 func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
 	message := "unable to update the record due to an edit conflict, please try again"
 	app.errorResponse(w, r, http.StatusConflict, message)
+}
+
+func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
+	message := fmt.Sprintf("the %s method is not supported for this resource", r.Method)
+	app.errorResponse(w, r, http.StatusMethodNotAllowed, message)
 }
