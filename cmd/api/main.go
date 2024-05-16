@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/w3qxst1ck/cs2-grenades/internal/data"
@@ -22,12 +23,18 @@ type config struct {
 	}
 	imagesDir string
 	imagesUrl string
+	limiter struct {
+		rps     float64 // request per seconds
+		burst   int     // value burst per request
+		enabled bool
+	}
 }
 
 type application struct {
 	config config
 	logger *log.Logger
 	models data.Models
+	wg sync.WaitGroup
 }
 
 func main() {
@@ -54,6 +61,11 @@ func main() {
 	flag.StringVar(&cfg.imagesDir, "images-directory", "internal/images/", "Directory for saved images")
 	flag.StringVar(&cfg.imagesUrl, "images-url", "/v1/image/", "Images url")
 
+	// limiter
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 10, "Rate limiter maximum request per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
+
 
 	flag.Parse()
 
@@ -70,7 +82,7 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	err = app.server()
+	err = app.serve()
 	if err != nil {
 		logger.Print(err)
 	}
