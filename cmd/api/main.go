@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/joho/godotenv"
-	"github.com/patrickmn/go-cache"
 	"github.com/w3qxst1ck/cs2-grenades/internal/data"
 )
 
@@ -37,7 +36,6 @@ type application struct {
 	logger *log.Logger
 	models data.Models
 	wg     sync.WaitGroup
-	cache  *cache.Cache
 }
 
 func main() {
