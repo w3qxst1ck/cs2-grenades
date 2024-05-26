@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/patrickmn/go-cache"
@@ -73,7 +72,7 @@ func main() {
 	// limiter
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 10, "Rate limiter maximum request per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
-	
+
 	rateLimmiterEnable, err := strconv.ParseBool(os.Getenv("API_RATE_LIMITTER_ENABLE"))
 	if err != nil {
 		logger.Fatal(err)
@@ -89,13 +88,10 @@ func main() {
 
 	defer db.Close()
 
-	cache := cache.New(time.Minute*10, time.Minute*20)
-
 	app := application{
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
-		cache:  cache,
 	}
 
 	err = app.serve()

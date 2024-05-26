@@ -3,7 +3,6 @@ version: '3.7'
 services:
   api:
     build: ./
-
     command: sh entrypoint.sh
     depends_on:
       - postgresdb
