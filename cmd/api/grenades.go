@@ -42,6 +42,8 @@ func (app *application) getGrenadeHandler(w http.ResponseWriter, r *http.Request
 
 	grenade.Images = images
 
+	app.cache.Set(r.URL.Path, envelope{"grenade": grenade}, 0)
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"grenade": grenade}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -252,6 +254,9 @@ func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	wg.Wait()
+
+	cachePath := r.URL.Path + qs.Encode()
+	app.cache.Set(cachePath, envelope{"grenades": grenades}, 0)
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"grenades": grenades}, nil)
 	if err != nil {

@@ -6,8 +6,10 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/patrickmn/go-cache"
 	"github.com/w3qxst1ck/cs2-grenades/internal/data"
 )
 
@@ -29,6 +31,11 @@ type config struct {
 		burst   int     // value burst per request
 		enabled bool
 	}
+	cache struct {
+		expiration int
+		cleanup int
+		enabled bool
+	}
 }
 
 type application struct {
@@ -36,6 +43,7 @@ type application struct {
 	logger *log.Logger
 	models data.Models
 	wg     sync.WaitGroup
+	cache  *cache.Cache
 }
 
 func main() {
@@ -77,6 +85,16 @@ func main() {
 	}
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", rateLimmiterEnable, "Enable rate limiter")
 
+	// cache
+	flag.IntVar(&cfg.cache.expiration, "cache-expiration", 10, "Expiration of cache data in minutes")
+	flag.IntVar(&cfg.cache.cleanup, "cache-cleanup", 20, "Cleanup time of cache data in minutes")
+
+	cacheEnable, err := strconv.ParseBool(os.Getenv("API_CACHE_ENABLE"))
+	if err != nil {
+		logger.Fatal(err)
+	}
+	flag.BoolVar(&cfg.cache.enabled, "cache-enabled", cacheEnable, "Enable cache")
+
 	flag.Parse()
 
 	db, err := openDB(cfg)
@@ -86,10 +104,13 @@ func main() {
 
 	defer db.Close()
 
+	cache := cache.New(time.Duration(cfg.cache.expiration)*time.Minute, time.Duration(cfg.cache.cleanup)*time.Minute)
+
 	app := application{
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		cache:  cache,
 	}
 
 	err = app.serve()

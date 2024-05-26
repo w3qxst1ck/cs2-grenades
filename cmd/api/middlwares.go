@@ -11,8 +11,7 @@ import (
 )
 
 func (app *application) recoverPanic(next http.Handler) http.Handler {
-	fmt.Println("recoverPanic")
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
@@ -25,7 +24,6 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (app *application) rateLimit(next http.Handler) http.Handler {
-	fmt.Println("rateLimit")
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
@@ -41,7 +39,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 			time.Sleep(time.Minute)
 			mu.Lock()
 			for ip, client := range clients {
-				if time.Since(client.lastSeen) > time.Minute * 3 {
+				if time.Since(client.lastSeen) > time.Minute*3 {
 					delete(clients, ip)
 				}
 			}
@@ -77,4 +75,19 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}	
+}
+
+func (app *application) checkCache(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if app.config.cache.enabled {
+			cacheKey := r.URL.Path + r.URL.Query().Encode()
+	
+			if data, found := app.cache.Get(cacheKey); found {
+				app.writeJSONCache(w, http.StatusOK, data, nil)
+				return
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
