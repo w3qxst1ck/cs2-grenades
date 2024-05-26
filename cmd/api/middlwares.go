@@ -11,6 +11,7 @@ import (
 )
 
 func (app *application) recoverPanic(next http.Handler) http.Handler {
+	fmt.Println("recoverPanic")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
 		defer func() {
 			if err := recover(); err != nil {
@@ -24,6 +25,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (app *application) rateLimit(next http.Handler) http.Handler {
+	fmt.Println("rateLimit")
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
