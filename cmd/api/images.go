@@ -42,7 +42,7 @@ func (app *application) uploadImageHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	imageUrl := fmt.Sprintf("localhost:%d%s%s", app.config.port, app.config.imagesUrl, fileName)
+	imageUrl := fmt.Sprintf("http://localhost:%d%s%s", app.config.port, app.config.imagesUrl, fileName)
 
 	image := &data.Image{
 		Name:      fileName,
