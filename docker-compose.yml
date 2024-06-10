@@ -4,6 +4,8 @@ services:
   api:
     build: ./
     command: sh entrypoint.sh
+    volumes:
+      - ./internal/images:/build/internal/images
     depends_on:
       - postgresdb
     ports:
