@@ -1,16 +1,6 @@
 version: '3.7'
 
 services:
-  api:
-    build: ./
-    command: sh entrypoint.sh
-    volumes:
-      - ./internal/images:/build/internal/images
-    depends_on:
-      - postgresdb
-    ports:
-      - 4000:4000
-
   postgresdb:
     image: postgres:13.1
     restart: always
@@ -20,6 +10,26 @@ services:
       - ./.env
     ports:
       - 5439:5432
+
+  api:
+    build: ./
+    # command: sh entrypoint.sh
+    volumes:
+      - ./internal/images:/build/internal/images
+    depends_on:
+      - postgresdb
+    ports:
+      - 4000:4000
+
+  # postgresdb:
+  #   image: postgres:13.1
+  #   restart: always
+  #   volumes:
+  #     - grenades_postgres_data:/var/lib/postgresql/data/
+  #   env_file:
+  #     - ./.env
+  #   ports:
+  #     - 5439:5432
 
 volumes:
   grenades_postgres_data:
