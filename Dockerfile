@@ -15,8 +15,6 @@ WORKDIR /build
 
 COPY .env .
 
-COPY entrypoint.sh .
-
 COPY --from=builder /build/bin/api /build/bin/api
 
 RUN mkdir -p internal/images
