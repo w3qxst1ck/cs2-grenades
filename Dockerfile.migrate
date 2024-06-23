@@ -1,0 +1,9 @@
+FROM golang:alpine
+
+WORKDIR .
+
+COPY migrations.sh .
+
+COPY /migrations ./migrations
+
+
