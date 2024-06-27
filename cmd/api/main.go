@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,6 +36,12 @@ type config struct {
 		expiration int
 		cleanup int
 		enabled bool
+	}
+	cors struct {
+		trustedOrigins []string
+	}
+	enableIP struct {
+		ip string
 	}
 }
 
@@ -94,6 +101,14 @@ func main() {
 		logger.Fatal(err)
 	}
 	flag.BoolVar(&cfg.cache.enabled, "cache-enabled", cacheEnable, "Enable cache")
+
+	// cors
+	trustedOrigins := strings.Split(os.Getenv("TRUSTED_ORIGINS"), ",")
+	cfg.cors.trustedOrigins = trustedOrigins
+
+	// enable IP
+	enableIP := os.Getenv("ENABLE_API")
+	cfg.enableIP.ip = enableIP
 
 	flag.Parse()
 

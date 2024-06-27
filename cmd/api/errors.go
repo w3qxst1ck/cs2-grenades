@@ -56,3 +56,8 @@ func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http
 	message := "rate limit exceeded"
 	app.errorResponse(w, r, http.StatusTooManyRequests, message)
 }
+
+func (app *application) unavailableIPResponse(w http.ResponseWriter, r *http.Request) {
+	message := "not allowed IP address"
+	app.errorResponse(w, r, http.StatusForbidden, message)
+}
