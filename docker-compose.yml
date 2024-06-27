@@ -12,8 +12,9 @@ services:
     ports:
       - 4000:4000
     networks:
-      - server
-      - local-api
+      local-api:
+      server:
+        ipv4_address: 172.23.0.2
 
   postgresdb:
     image: postgres:13.1
@@ -39,6 +40,10 @@ services:
 networks:
   server:
     name: grenades-network
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1
   local-api:
 
 volumes:
