@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/w3qxst1ck/cs2-grenades/internal/data"
@@ -183,7 +182,8 @@ func (app *application) deleteGrenadeHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err = app.deleteGrenadeImages(images); err != nil {
+	// deleting from S3 storage
+	if err = app.deleteImagesFromStorage(images); err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
@@ -269,14 +269,4 @@ func (app *application) createImagesURL(images []*data.Image) {
 	for i := range images {
 		images[i].ImageURL = fmt.Sprintf("%s%s", app.config.storageS3.DownloadUrl, images[i].Name)
 	}
-}
-
-func (app *application) deleteGrenadeImages(images []*data.Image) error {
-	for _, image := range images {
-		err := os.Remove(fmt.Sprintf("%s%s", app.config.imagesDir, image.Name))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

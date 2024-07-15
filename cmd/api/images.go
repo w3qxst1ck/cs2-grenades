@@ -93,7 +93,8 @@ func (app *application) deleteImageHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = app.deleteGrenadeImages([]*data.Image{image})
+	// deleting from S3 storage
+	err = app.deleteImagesFromStorage([]*data.Image{image})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

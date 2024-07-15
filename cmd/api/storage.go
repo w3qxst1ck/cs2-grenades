@@ -9,6 +9,7 @@ import (
 	s3config "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/w3qxst1ck/cs2-grenades/internal/data"
 )
 
 func (app *application) createClient() (*s3.Client, error) {
@@ -44,16 +45,39 @@ func (app *application) uploadImage(image multipart.File, filename string) error
 
 	uploader := manager.NewUploader(client)
 
-	res, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
+	input := &s3.PutObjectInput{
 		Bucket: aws.String("test-bucket-2"),
 		Key:    aws.String(filename),
 		Body:   image,
-	})
+	}
+
+	res, err := uploader.Upload(context.TODO(), input)
 
 	if err != nil {
 		return err
 	}
 	_ = res
+
+	return nil
+}
+
+func (app *application) deleteImagesFromStorage(images []*data.Image) error {
+	client, err := app.createClient()
+	if err != nil {
+		return err
+	}
+
+	for _, image := range images {
+		input := &s3.DeleteObjectInput{
+			Bucket: aws.String(app.config.storageS3.Bucket), // s3 bucket name
+			Key:    aws.String(image.Name),                    // file name
+		}
+	
+		_, err = client.DeleteObject(context.TODO(), input)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

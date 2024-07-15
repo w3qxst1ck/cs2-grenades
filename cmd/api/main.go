@@ -25,8 +25,6 @@ type config struct {
 		msxIdleConns int
 		maxIdleTime  string
 	}
-	imagesDir string
-	imagesUrl string
 	limiter   struct {
 		rps     float64 // request per seconds
 		burst   int     // value burst per request
@@ -83,10 +81,6 @@ func main() {
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgresSQL max open connections")
 	flag.IntVar(&cfg.db.msxIdleConns, "db-max-idle-conns", 25, "PostgresSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgresSQL max connection idle time")
-
-	// image
-	flag.StringVar(&cfg.imagesDir, "images-directory", os.Getenv("API_IMAGES_DIR"), "Directory for saved images")
-	flag.StringVar(&cfg.imagesUrl, "images-url", "/v1/image/", "Images url")
 
 	// limiter
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 10, "Rate limiter maximum request per second")
