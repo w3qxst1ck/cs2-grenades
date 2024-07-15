@@ -43,6 +43,12 @@ type config struct {
 	enableIP struct {
 		ip string
 	}
+	storageS3 struct {
+		URL string
+		Region string
+		Bucket string
+		DownloadUrl string
+	}
 }
 
 type application struct {
@@ -109,6 +115,12 @@ func main() {
 	// enable IP
 	enableIP := os.Getenv("ENABLE_API")
 	cfg.enableIP.ip = enableIP
+
+	// storage S3 selectel
+	cfg.storageS3.URL = os.Getenv("STORAGE_URL")
+	cfg.storageS3.Region = os.Getenv("STORAGE_REGION")
+	cfg.storageS3.Bucket = os.Getenv("STORAGE_BUCKET")
+	cfg.storageS3.DownloadUrl = os.Getenv("STORAGE_DOWNLOAD_URL")
 
 	flag.Parse()
 

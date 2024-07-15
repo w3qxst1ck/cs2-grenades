@@ -267,7 +267,7 @@ func (app *application) getAllGrenadesHandler(w http.ResponseWriter, r *http.Req
 
 func (app *application) createImagesURL(images []*data.Image) {
 	for i := range images {
-		images[i].ImageURL = fmt.Sprintf("http://localhost:%d%s%s", app.config.port, app.config.imagesUrl, images[i].Name)
+		images[i].ImageURL = fmt.Sprintf("%s%s", app.config.storageS3.DownloadUrl, images[i].Name)
 	}
 }
 

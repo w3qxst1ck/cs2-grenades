@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
+
+	// "io"
 	"mime/multipart"
 	"net/http"
-	"os"
+
+	// "os"
 	"time"
 
 	"github.com/w3qxst1ck/cs2-grenades/internal/data"
@@ -42,7 +44,7 @@ func (app *application) uploadImageHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	imageUrl := fmt.Sprintf("http://localhost:%d%s%s", app.config.port, app.config.imagesUrl, fileName)
+	imageUrl := fmt.Sprintf("%s%s", app.config.storageS3.DownloadUrl, fileName)
 
 	image := &data.Image{
 		Name:      fileName,
@@ -107,13 +109,8 @@ func (app *application) deleteImageHandler(w http.ResponseWriter, r *http.Reques
 func (app *application) saveImage(file multipart.File) (string, error) {
 	fileName := fmt.Sprintf("%d.jpg", time.Now().UnixMicro())
 
-	dst, err := os.Create(fmt.Sprintf("%s%s", app.config.imagesDir, fileName))
+	err := app.uploadImage(file, fileName)
 	if err != nil {
-		return "", err
-	}
-	defer dst.Close()
-
-	if _, err := io.Copy(dst, file); err != nil {
 		return "", err
 	}
 

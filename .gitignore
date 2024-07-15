@@ -62,3 +62,6 @@ Temporary Items
 
 # images
 *.jpg
+
+# storage s3 env
+.env.aws
