@@ -37,7 +37,7 @@ func (app *application) createClient() (*s3.Client, error) {
 	return client, nil
 }
 
-func (app *application) uploadImage(image multipart.File, filename string) error {
+func (app *application) uploadImageToStorage(image multipart.File, filename string) error {
 	client, err := app.createClient()
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (app *application) uploadImage(image multipart.File, filename string) error
 	uploader := manager.NewUploader(client)
 
 	input := &s3.PutObjectInput{
-		Bucket: aws.String("test-bucket-2"),
+		Bucket: aws.String(app.config.storageS3.Bucket),
 		Key:    aws.String(filename),
 		Body:   image,
 	}

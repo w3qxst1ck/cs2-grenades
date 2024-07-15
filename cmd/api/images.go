@@ -32,7 +32,7 @@ func (app *application) uploadImageHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	fileName, err := app.saveImage(file)
+	fileName, err := app.saveImageToStorage(file)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -107,10 +107,10 @@ func (app *application) deleteImageHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (app *application) saveImage(file multipart.File) (string, error) {
+func (app *application) saveImageToStorage(file multipart.File) (string, error) {
 	fileName := fmt.Sprintf("%d.jpg", time.Now().UnixMicro())
 
-	err := app.uploadImage(file, fileName)
+	err := app.uploadImageToStorage(file, fileName)
 	if err != nil {
 		return "", err
 	}
