@@ -11,10 +11,6 @@ services:
       - postgresdb
     ports:
       - 4000:4000
-    # environment:
-    #   - AWS_ACCESS_KEY_ID=780d8748d64c4a49a87da6e0f8d77e11
-    #   - AWS_SECRET_ACCESS_KEY=bf36848d79364032a99d2f42fa1c93a9
-    #   - AWS_DEFAULT_REGION=ru-1
     env_file:
       - ./.env.aws
     
