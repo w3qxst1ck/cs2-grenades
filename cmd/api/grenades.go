@@ -181,13 +181,12 @@ func (app *application) deleteGrenadeHandler(w http.ResponseWriter, r *http.Requ
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-	_ = images
 
 	// deleting from S3 storage
-	// if err = app.deleteImagesFromStorage(images); err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
+	if err = app.deleteImagesFromStorage(images); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	err = app.models.Grenades.Delete(id)
 	if err != nil {

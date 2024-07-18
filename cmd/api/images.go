@@ -94,11 +94,11 @@ func (app *application) deleteImageHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	// deleting from S3 storage
-	// err = app.deleteImagesFromStorage([]*data.Image{image})
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
+	err = app.deleteImagesFromStorage([]*data.Image{image})
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "image successfully deleted"}, nil)
 	if err != nil {
@@ -110,10 +110,10 @@ func (app *application) deleteImageHandler(w http.ResponseWriter, r *http.Reques
 func (app *application) saveImageToStorage(file multipart.File) (string, error) {
 	fileName := fmt.Sprintf("%d.jpg", time.Now().UnixMicro())
 
-	// err := app.uploadImageToStorage(file, fileName)
-	// if err != nil {
-	// 	return "", err
-	// }
+	err := app.uploadImageToStorage(file, fileName)
+	if err != nil {
+		return "", err
+	}
 
 	return fileName, nil
 }
